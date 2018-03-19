@@ -70,16 +70,19 @@ function onMessage(event) {
 // Look up the video by ID
 // return the thumbnail image
 function getVideos(array) {
+  
+  // Loop the URLs in the array
   for(var v=0; v<array.length; v++) {
-    Logger.log(array[v]);
+    
+    // Split to get the video ID
     var videoId = array[v].url.split("=")[1];
-    Logger.log(videoId)
+    
+    // YouTube API v3, return the snippet with video metadata
+    // Build the resource object
     var videoResource = YouTube.Videos.list('snippet', {id:videoId });
     array[v].thumb = videoResource.items[0].snippet.thumbnails.standard.url;
     array[v].title = videoResource.items[0].snippet.title;
-    // array[v].duration = YTDurationToSeconds(videoResource.items[0].contentDetails.duration);
   }
-  Logger.log(array);
   
   // send the object to build the response widget
   return array;
@@ -94,14 +97,22 @@ function getLookup(keys) {
     
     for(var i=0; i<data.length; i++) {
       var string = data[i][0].concat(", ", data[i][1]);
+      var expr = '^';
+      // Build the regex
+      for(var s=0; s<keys.length; s++) {
+        expr += '(?=.*\\b' + keys[s] + '.*\\b)';
+      }
       
-      for(var s in keys) {
-        var expr = new RegExp(keys[s], "gi");
+      expr += '.*$'
+      
+      expr = new RegExp(expr, "gi");
+      
+      Logger.log(expr)
+        
         if(expr.test(string)) {
           matches.push({"url":data[i][4]})
         } 
-    }
-  }
+      }
   
   // process the matches array to delete duplicate URLs
   var matches = uniqBy(matches, JSON.stringify);
