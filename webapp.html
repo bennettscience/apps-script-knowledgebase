@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <base target="_top">
+    <style>
+      html, body {
+        height:100%;
+        width:100%;
+        margin:0;
+        padding:0;
+      }
+      
+      a { display: block; }
+      
+      #wrapper {
+        height:100%;
+        width:100%;
+        display:grid;
+        grid-template-columns: 20% 1fr;
+        grid-template-areas: "left right";
+        grid-gap: 10px;
+        padding:10px;
+        box-sizing: border-box;
+      }
+      #wrapper > div {
+        background-color: #efefef;
+      }
+      #left { 
+        grid-area: left;
+        padding:10px;
+      }
+      
+      #left input[type="text"], select { 
+        width: 90%; 
+        font-size:14px;
+        height:40px;
+      }
+      
+      button { display:block; margin-top: 10px;}
+      
+      #resultCount { 
+        margin: 10px 0; 
+        height:20px;
+      }
+      
+      #right { grid-area: right; }
+      
+      .card { 
+        display:block; 
+        background-color: #fff; 
+        width: 85%;
+        margin: 10px auto;
+        padding: 10px;
+      }
+      
+      .card .desc {
+        display:block;
+        margin-bottom: 10px;
+      }
+      
+      .card img { 
+        display:block;
+        width: 80%;
+        height: auto;
+        margin: 0 auto;
+      }
+      
+      #new-article {
+        position: absolute;
+        left:50%;
+        width:50%;
+        padding: 25px;
+        top:10%;
+        transform:translateX(-50%);
+        display:none;
+        background:#fff;
+      }
+      
+      #new-article #close {
+        position: absolute;
+        top:15px;
+        right:25px;
+        color:rgb(0, 0, 150);
+        cursor:pointer;
+      }
+      
+      #new-article-form {
+        position:relative;
+      }
+      
+      #new-article-form label {
+        display:block;
+        margin-top:10px;
+      }
+      
+      #new-article-form textarea {
+        height: 65px;
+      }
+      
+      #new-article-form input, textarea {
+        width:75%;
+      }
+      
+      #confirmation {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+      
+      .success { color: rgb(0,150,0); }
+      
+      .hide { display: none; }
+      
+      <!-- Google addon styles, to take effect after the page's -->
+    </style>
+  </head>
+  <body>
+    <div id="wrapper">
+      <div id="left">
+        <form id="search-form">
+          <select id="select" name="platform"></select>
+          
+          <h2>Tags: </h2>
+          <input type="text" name="tags" placeholder="Comma separated keywords"/>
+          
+          <button type="submit" class="action" id="submit" onclick="event.preventDefault(); google.script.run.withSuccessHandler(displayResults).getResources(this.parentNode)">Search</button>
+        </form>
+        <button class="create" onclick="$('#new-article').show()">New Article</button>
+        <div id="resultCount"></div>
+        <hr />
+        <h2>Links</h2>
+        <a href="https://docs.google.com/a/elkhart.k12.in.us/forms/d/e/1FAIpQLSdhFRW3e5JcD56RpIC9A0m8eWSR-nRVrv-OUDHfgACScptkEQ/viewform">Help request</a>
+        <a href="https://www.youtube.com/channel/UCgwJ38NKsSVTBW_yzw8n1eQ/featured">Instructional Technology YouTube</a>
+        <a href="https://pd.elkhart.k12.in.us">PD Signup</a>
+      </div>
+      <div id="right">
+        <h2 id="title"></h2>
+        <div id="results"></div>
+      </div>
+    </div>
+    <div id="new-article">
+      <p>* denotes a required element</p>
+      <div id="close" onclick="$(this).parent().hide()">[close]</div>
+      <form id="new-article-form">
+        <label>Platform*</label>
+        <select id="new-article-select" name="platform"></select>
+        <label>Title*</label>
+        <input type="text" name="title" required />
+        <label>Instructions (HTML formatting accepted)*</label>
+        <textarea name="description" required></textarea>
+        <label>Tags (comma-separated)*</label>
+        <input type="text" name="tags" required/>
+        <label>YouTube Video Link</label>
+        <input type="text" name="video" />
+        <input type="hidden" name="img" />
+        
+        <button class="create" type="submit" onclick="event.preventDefault(); google.script.run.withSuccessHandler(confirm).withFailureHandler(err).addNewArticle(this.parentNode);">Submit</button>
+      </form>
+      <div id="confirmation"></div>
+    </div>
+    <script type="text/javascript">
+      $(document).ready(function() {
+        google.script.run.withSuccessHandler(buildPlatformList).getPlatforms()  
+      })
+      
+      function err(msg) {
+        console.log(msg);
+        $("#confirmation").toggleClass("error").text(msg);
+        
+        setTimeout(function() {
+          $("#confirmation").toggleClss("error").empty();
+        }, 5000);
+      }
+      
+      function confirm(msg) {
+        $("#confirmation").toggleClass("success").text(msg);
+        
+        setTimeout(function() {
+          $("#new-article-form")[0].reset();
+          $("#confirmation").toggleClass("success").empty();
+        }, 5000);
+      }
+      
+      function buildPlatformList(data) {
+        var select = $("#select");
+        var newSelect = $("#new-article-select");
+        for(var i=0; i<data.length; i++) {
+          var option = "<option>" + data[i].toString() + "</option>";
+          select.append(option);
+          newSelect.append(option);
+        }
+      }
+        
+      function displayResults(data) {
+        $("#results").empty();
+        $("#resultCount").empty();
+        var result;
+        
+        (data.length > 0 && data.length < 2) ? result="match" : result="matches";
+        
+        if(data.length == 0) {
+          $("#results").append("<div class='card'><h2 class='title'>There were no results for your search.</h2><img src='https://cdn.dribbble.com/users/37530/screenshots/2485318/no-results.png' /></div>");
+        } else {
+          
+          for(var i=0; i<data.length; i++) {
+            var container = document.createElement("div");
+            
+            container.innerHTML = Card.TEMPLATE;
+            $("#results").append(container);
+            
+            var div = container.children[0];
+            div.querySelector(".title").textContent = data[i].title;
+            div.querySelector(".desc").innerHTML = data[i].desc;
+            div.querySelector(".video").setAttribute("href", data[i].vid);
+            div.querySelector(".video").textContent = "YouTube video";
+            if(data[i].img) {
+              div.querySelector(".img").children[0].setAttribute("src", data[i].img)
+            }
+          }
+        }
+        $("#resultCount").append("Found " + data.length + " " + result);
+      }
+      
+      function Card() {
+        this.submitQuery = $("#submit");
+      }
+      
+      Card.TEMPLATE = 
+        '<div class="card">' +
+          '<h2 class="title"></h2>' +
+          '<div class="desc"></div>' +
+          '<div class="img"><img src="" /></div>' +
+          '<a class="video" href=""></a>' +
+        '</div>';
+    </script>
+  </body>
+</html>
+
+
