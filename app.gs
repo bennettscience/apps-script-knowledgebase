@@ -1,5 +1,9 @@
 function doGet(e) {
-  return HtmlService.createHtmlOutputFromFile("webapp");
+  var params = e.parameter;
+  var template = HtmlService.createTemplateFromFile("webapp");
+    Logger.log(params);
+    template.data = JSON.stringify(params)
+    return template.evaluate();
 }
 
 function getPlatforms() {
@@ -12,45 +16,35 @@ function getPlatforms() {
  * return [Array]
 */
 function getResources(formObject) {
+  Logger.log(formObject);
   var results = [];
   var db = ss.getSheetByName('db');
-  var allTags = db.getRange(2,2,db.getLastRow(),1).getValues();
   var data = db.getRange(2,1,db.getLastRow(),db.getLastColumn()).getValues();
-  var tags = formObject.tags.split(", ");
-  
-//  Logger.log(allTags);
-//  // process the tags
-//  if(tags.length > 0) {
-//    for(var n in allTags) {
-//      for(var m in tags) {
-//        Logger.log(allTags[n].indexOf(tags[m]))
-//      }
-//    }
-//    
-//  }
   
   // find matching resources
   for(var i=0; i<data.length; i++) {
-    if(data[i][0] == formObject.platform) {
-      if(formObject.tags.length == 0) {
+    if(data[i][0].toLowerCase() == formObject.platform.toLowerCase()) {
+      if(!formObject.tags) {
+        
         results.push(
           {
             tags: data[i][1],
             title: data[i][2],
             desc: data[i][3],
-            vid: data[i][4],
+            url: data[i][4],
             img: data[i][5]
           }
         )
       } else {
+        var tags = formObject.tags.split(",");
         for(var n in tags) {
-          if(data[i][1].indexOf(tags[n].toLowerCase()) > -1) {
+          if(data[i][1].toLowerCase().indexOf(tags[n].toLowerCase()) > -1) {
             results.push(
               {
                 tags: data[i][1],
                 title: data[i][2],
                 desc: data[i][3],
-                vid: data[i][4],
+                url: data[i][4],
                 img:data[i][5]
               }
             )
@@ -80,5 +74,19 @@ function addNewArticle(formObject) {
     return "Article submitted successfully."
   } catch(e) {
     return e.message;
+  }
+}
+
+function getAuth() {
+  var user = Session.getActiveUser().getEmail();
+  var sheet = ss.getSheetByName('authUsers');
+  var users = sheet.getRange(1,1,sheet.getLastRow(), 1).getValues();
+  
+  Logger.log(users);
+  Logger.log(users[0].indexOf(user));
+  if(users[0].indexOf(user) > -1) {
+    return true;
+  } else {
+    return false;
   }
 }

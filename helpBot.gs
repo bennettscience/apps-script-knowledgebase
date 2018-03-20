@@ -62,7 +62,6 @@ function onMessage(event) {
   var videoObjects = getVideos(videos);
   
   Logger.log(videoObjects);
-  
   // return the card
   return buildCard(videoObjects);
 }
@@ -91,37 +90,43 @@ function getVideos(array) {
 // Get an array of videos matching the search key request
 // @param [Array] - search keys split by space
 function getLookup(keys) {
-  var data = sheet.getRange(2, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues();
-
+  var sheet = ss.getSheetByName("db");
+  var data = sheet.getDataRange().getValues();
+  
+  // Create an array to hold matching results
   var matches = [];
+  
+  // Build the regex
+  var expr = '^';
+  for(var s=0; s<keys.length; s++) {
+    expr += '(?=.*\\b' + keys[s] + '.*\\b)';
+  }
+  expr += '.*$'
+  expr = new RegExp(expr, "gi");
+  
+  for(var i=0; i<data.length;i++) {
+    var string = data[i][0].concat(", ", data[i][1]);
     
-    for(var i=0; i<data.length; i++) {
-      var string = data[i][0].concat(", ", data[i][1]);
-      var expr = '^';
-      // Build the regex
-      for(var s=0; s<keys.length; s++) {
-        expr += '(?=.*\\b' + keys[s] + '.*\\b)';
-      }
-      
-      expr += '.*$'
-      
-      expr = new RegExp(expr, "gi");
-      
-      Logger.log(expr)
-        
-        if(expr.test(string)) {
-          matches.push({"url":data[i][4]})
-        } 
-      }
+    // Use string.match instead of expr.test() because the latter advances the index, 
+    // resulting in incomplete results.
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test
+    if(string.match(expr)) {
+      matches.push({"url":data[i][4], "title":data[i][2]})
+    } 
+  }
   
   // process the matches array to delete duplicate URLs
   var matches = uniqBy(matches, JSON.stringify);
   
+  // A blank url key will cause an error on the YouTube API.
+  // Remove any matches that have a blank URL field.
+  matches = matches.filter(function(a) { return a.url !== "" });
+  
   return matches;
 }
 
-// See https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
-// for how to filter an array of objects with matching keys
+// Filter the array of objects with matching keys
+// https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
 function uniqBy(a, key) {
     var seen = {};
     return a.filter(function(item) {
@@ -134,10 +139,8 @@ function buildWidgets(array) {
   var widgets = [];
   var num;
   
-  Logger.log(array.length);
-  
   if(array.length == 0) {
-    widgets.push({ textParagraph: { text: "I couldn't find anything. You're out of luck." } });
+    widgets.push({ textParagraph: { text: "I couldn't find any videos. <a href='" + ScriptApp.getService().getUrl() + "'>Check the website</a> for more articles that may help." } });
   } else if(array.length == 1) {
     num = "video";
     widgets.push({
@@ -187,7 +190,7 @@ function buildCard(array) {
       }]
     }]
   }
-  Logger.log(cardJson);
+
   return cardJson
 }
 

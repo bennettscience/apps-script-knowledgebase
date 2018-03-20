@@ -24,11 +24,10 @@
         padding:10px;
         box-sizing: border-box;
       }
-      #wrapper > div {
-        background-color: #efefef;
-      }
+
       #left { 
         grid-area: left;
+        background-color: #efefef;
         padding:10px;
       }
       
@@ -45,11 +44,14 @@
         height:20px;
       }
       
-      #right { grid-area: right; }
+      #right { 
+        grid-area: right; 
+        background-color: #fff;
+      }
       
       .card { 
         display:block; 
-        background-color: #fff; 
+        background-color: #efefef; 
         width: 85%;
         margin: 10px auto;
         padding: 10px;
@@ -119,6 +121,7 @@
     <div id="wrapper">
       <div id="left">
         <form id="search-form">
+          <h2>Seearch within: </h2>
           <select id="select" name="platform"></select>
           
           <h2>Tags: </h2>
@@ -126,7 +129,7 @@
           
           <button type="submit" class="action" id="submit" onclick="event.preventDefault(); google.script.run.withSuccessHandler(displayResults).getResources(this.parentNode)">Search</button>
         </form>
-        <button class="create" onclick="$('#new-article').show()">New Article</button>
+        <button class="create" id="new-article-button" onclick="$('#new-article').show()">New Article</button>
         <div id="resultCount"></div>
         <hr />
         <h2>Links</h2>
@@ -161,8 +164,18 @@
     </div>
     <script type="text/javascript">
       $(document).ready(function() {
-        google.script.run.withSuccessHandler(buildPlatformList).getPlatforms()  
+        google.script.run.withSuccessHandler(isAuth).getAuth();
+        google.script.run.withSuccessHandler(buildPlatformList).getPlatforms();
+        var data = <?!= data ?>;
+
+        google.script.run.withSuccessHandler(displayResults).getResources(data);
       })
+      
+      function isAuth(user) {
+        if(!user) {
+          $("#new-article-button").hide();
+        }
+      }
       
       function err(msg) {
         console.log(msg);
@@ -200,7 +213,7 @@
         (data.length > 0 && data.length < 2) ? result="match" : result="matches";
         
         if(data.length == 0) {
-          $("#results").append("<div class='card'><h2 class='title'>There were no results for your search.</h2><img src='https://cdn.dribbble.com/users/37530/screenshots/2485318/no-results.png' /></div>");
+          $("#results").append("<div class='card' style='text-align:center'><h2 class='title'>Bear with us...there were no results for your search.</h2><p>Searching by platform without tags will give broader results.</p><img src='https://cdn.dribbble.com/users/37530/screenshots/2485318/no-results.png' /></div>");
         } else {
           
           for(var i=0; i<data.length; i++) {
@@ -233,6 +246,8 @@
           '<div class="img"><img src="" /></div>' +
           '<a class="video" href=""></a>' +
         '</div>';
+        
+      
     </script>
   </body>
 </html>
