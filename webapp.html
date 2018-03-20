@@ -70,14 +70,15 @@
       }
       
       #new-article {
+        grid-area:right;
         position: absolute;
         left:50%;
         width:50%;
         padding: 25px;
         top:10%;
-        transform:translateX(-50%);
+        transform:translateX(-25%);
         display:none;
-        background:#fff;
+        background:#efefef;
       }
       
       #new-article #close {
@@ -98,11 +99,11 @@
       }
       
       #new-article-form textarea {
-        height: 65px;
+        height: 150px;
       }
       
       #new-article-form input, textarea {
-        width:75%;
+        width:90%;
       }
       
       #confirmation {
@@ -183,7 +184,7 @@
         
         setTimeout(function() {
           $("#confirmation").toggleClss("error").empty();
-        }, 5000);
+        }, 3000);
       }
       
       function confirm(msg) {
@@ -192,7 +193,7 @@
         setTimeout(function() {
           $("#new-article-form")[0].reset();
           $("#confirmation").toggleClass("success").empty();
-        }, 5000);
+        }, 3000);
       }
       
       function buildPlatformList(data) {
@@ -225,8 +226,10 @@
             var div = container.children[0];
             div.querySelector(".title").textContent = data[i].title;
             div.querySelector(".desc").innerHTML = data[i].desc;
-            div.querySelector(".video").setAttribute("href", data[i].vid);
-            div.querySelector(".video").textContent = "YouTube video";
+            if(data[i].url) {
+              div.querySelector(".video").setAttribute("href", data[i].vid);
+              div.querySelector(".video").textContent = "YouTube video";
+            }
             if(data[i].img) {
               div.querySelector(".img").children[0].setAttribute("src", data[i].img)
             }
