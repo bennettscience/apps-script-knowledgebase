@@ -1,10 +1,33 @@
-var ss = SpreadsheetApp.openById("1WdWFGpjbQ6St9BaMSJHyR2Druc698sU-T4VLwNFWXAI");
+/*
+ * Apps Script Knowledgebase Suite v0.1
+ * Copyright 2018 Brian Bennett
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * See https://ohheybrian.com/blog for more information on using the Knowledgebase Suite
+ * See also https://github.com/bennettscience/apps-script-knowledgebase for technical details
+ *
+*/
+var ss = SpreadsheetApp.openById("YOUR_SS_KEY");
 var sheet = ss.getSheetByName("db");
-var DEFAULT_IMAGE = "https://d30y9cdsu7xlg0.cloudfront.net/png/568541-200.png";
+var APP_URL = "YOUR_PUBLISHED_WEB_APP_URL"
+
+var DEFAULT_IMAGE = "DEFAULT_IMG_URL";
 var HEADER = {
   header: {
-    title: "ECS Helpbot",
-    subtitle:"Get help now",
+    title: "Bot Name",
+    subtitle:"Bot subtitle",
     imageUrl: DEFAULT_IMAGE,
     imageStyle: "IMAGE"
   }
@@ -16,10 +39,11 @@ var HEADER = {
  * @param {Object} event the event object from Hangouts Chat
  */
 function onAddToSpace(event) {
+  console.info(event);
   var message = '';
 
   if (event.space.type == 'DM') {
-    message = 'Thanks for adding me! I\'ll give you videos based on a search term. Try searching for "gmail" or "calendar" to get started.';
+    message = 'Give a nice welcome message to the user';
   } else {
     message = 'Thank you for adding me to ' + event.space.displayName;
   }
@@ -43,59 +67,62 @@ function onRemoveFromSpace(event) {
  */
 function onMessage(event) {
   var msg = event.message.text;
-  
-  msg = msg.replace("@ECS Helpbot ", "");
-  
+
   msg = msg.split(" ");
-  
-  Logger.log(msg);
-  
+
   // Look up the search string in the spreadsheet
   // Return an array of video URLs with matching tags
-  Logger.log('Look up the search key');
-  var videos = getLookup(msg); // array
-  
-  Logger.log(videos);
-  
+  var videos = getLookup(msg);
+
   // Extract the video thumbnail from the YouTube API
   // Return an array of objects - videos.url, videos.thumbail
   var videoObjects = getVideos(videos);
-  
-  Logger.log(videoObjects);
+
   // return the card
   return buildCard(videoObjects);
 }
 
-// Look up the video by ID
-// return the thumbnail image
+
+/**
+ * getVideos - Get matched video data to return in the bot
+ *
+ * @param  {Object[]} array - raw video URLs
+ * @returns {Object[]} array
+ */
 function getVideos(array) {
-  
+
   // Loop the URLs in the array
   for(var v=0; v<array.length; v++) {
-    
+
     // Split to get the video ID
     var videoId = array[v].url.split("=")[1];
-    
+
     // YouTube API v3, return the snippet with video metadata
-    // Build the resource object
     var videoResource = YouTube.Videos.list('snippet', {id:videoId });
+
+    // Build the object for each video URL
     array[v].thumb = videoResource.items[0].snippet.thumbnails.standard.url;
     array[v].title = videoResource.items[0].snippet.title;
   }
-  
+
   // send the object to build the response widget
   return array;
 }
 
-// Get an array of videos matching the search key request
-// @param [Array] - search keys split by space
+
+/**
+ * getLookup - Get an array of videos matching the search key request
+ *
+ * @param  {Object[]} keys - Array of search terms
+ * @returns {Object[]} matches - Array of video objects matched to the tag
+ */
 function getLookup(keys) {
   var sheet = ss.getSheetByName("db");
   var data = sheet.getDataRange().getValues();
-  
+
   // Create an array to hold matching results
   var matches = [];
-  
+
   // Build the regex
   var expr = '^';
   for(var s=0; s<keys.length; s++) {
@@ -103,30 +130,34 @@ function getLookup(keys) {
   }
   expr += '.*$'
   expr = new RegExp(expr, "gi");
-  
+
   for(var i=0; i<data.length;i++) {
     var string = data[i][0].concat(", ", data[i][1]);
-    
-    // Use string.match instead of expr.test() because the latter advances the index, 
-    // resulting in incomplete results.
+
+    // Use string.match() instead of expr.test() because the latter advances the index, resulting in incomplete results.
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test
     if(string.match(expr)) {
       matches.push({"url":data[i][4], "title":data[i][2]})
-    } 
+    }
   }
-  
+
   // process the matches array to delete duplicate URLs
   var matches = uniqBy(matches, JSON.stringify);
-  
+
   // A blank url key will cause an error on the YouTube API.
   // Remove any matches that have a blank URL field.
   matches = matches.filter(function(a) { return a.url !== "" });
-  
+
   return matches;
 }
 
-// Filter the array of objects with matching keys
-// https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
+/**
+ * getLookup - Filter the array of objects with matching keys
+ *
+ * @param [Array] matches
+ * @callback key - each [Array] item is filtered through the callback function
+ * See https://stackoverflow.com/a/9229821/2278429 for filtering {Objects}
+*/
 function uniqBy(a, key) {
     var seen = {};
     return a.filter(function(item) {
@@ -135,33 +166,42 @@ function uniqBy(a, key) {
     })
 }
 
-function buildWidgets(array) {
+
+/**
+ * buildWidgets - Buld the widgets to display in the card
+ *
+ * @param  {Object[]} data
+ * @param {string} data.title - video title
+ * @param {string} data.thumb - video thumbnail
+ * @param {string} data.url - link to the live YouTube video
+ * @returns {Object[]} widgets
+ */
+function buildWidgets(data) {
   var widgets = [];
-  var num;
-  
-  if(array.length == 0) {
-    widgets.push({ textParagraph: { text: "I couldn't find any videos. <a href='" + ScriptApp.getService().getUrl() + "'>Check the website</a> for more articles that may help." } });
-  } else if(array.length == 1) {
-    num = "video";
+
+  // Determine plurality of results
+  if(data.length == 0) {
+    widgets.push({ textParagraph: { text: "I couldn't find any videos. <a href='" + APP_URL + "'>Check the website</a> for more articles that may help." } });
+  } else if(data.length == 1) {
     widgets.push({
-      textParagraph: { text: "I found " + array.length + " video that may help:" }
+      textParagraph: { text: "I found " + data.length + " video that may help:" }
     });
   } else {
     widgets.push({
-      textParagraph: { text: "I found " + array.length + " videos that may help:" }
+      textParagraph: { text: "I found " + data.length + " videos that may help:" }
     });
   }
- 
-  
-  for(var i=0; i<array.length; i++) {
+
+  // Push each object into a widget to build a card
+  for(var i=0; i<data.length; i++) {
     widgets.push(
       {
         keyValue: {
-          content: array[i].title,
+          content: data[i].title,
         }
       },
       {
-        image: { imageUrl: array[i].thumb }
+        image: { imageUrl: data[i].thumb }
       },
       {
         buttons: [{
@@ -169,7 +209,7 @@ function buildWidgets(array) {
             text: "OPEN VIDEO",
             onClick: {
               openLink: {
-                url: array[i].url
+                url: data[i].url
               }
             }
           }
@@ -180,9 +220,18 @@ function buildWidgets(array) {
   return widgets
 }
 
-function buildCard(array) {
-  var widgets = buildWidgets(array);
-  
+
+/**
+ * buildCard - Get the widgets and build the card for the bot
+ *
+ * @param  {Object[]} allResults - All matched results from the tag and platform search
+ * @returns {json}
+ */
+function buildCard(allResults) {
+
+  // Get the widgets
+  var widgets = buildWidgets(allResults);
+
   var cardJson = {
     cards: [HEADER, {
       sections: [{
@@ -193,4 +242,3 @@ function buildCard(array) {
 
   return cardJson
 }
-

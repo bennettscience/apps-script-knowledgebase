@@ -11,9 +11,9 @@
         margin:0;
         padding:0;
       }
-      
+
       a { display: block; }
-      
+
       #wrapper {
         height:100%;
         width:100%;
@@ -25,118 +25,116 @@
         box-sizing: border-box;
       }
 
-      #left { 
+      #left {
         grid-area: left;
         background-color: #efefef;
         padding:10px;
       }
-      
-      #left input[type="text"], select { 
-        width: 90%; 
+
+      #left input[type="text"], select {
+        width: 90%;
         font-size:14px;
         height:40px;
       }
-      
+
       button { display:block; margin-top: 10px;}
-      
-      #resultCount { 
-        margin: 10px 0; 
+
+      #resultCount {
+        margin: 10px 0;
         height:20px;
       }
-      
-      #right { 
-        grid-area: right; 
+
+      #right {
+        grid-area: right;
         background-color: #fff;
       }
-      
-      .card { 
-        display:block; 
-        background-color: #efefef; 
+
+      .card {
+        display:block;
+        background-color: #efefef;
         width: 85%;
         margin: 10px auto;
         padding: 10px;
       }
-      
+
       .card .desc {
         display:block;
         margin-bottom: 10px;
       }
-      
-      .card img { 
+
+      .card img {
         display:block;
         width: 80%;
         height: auto;
         margin: 0 auto;
       }
-      
+
       #new-article {
-        grid-area:right;
         position: absolute;
-        left:50%;
-        width:50%;
+        left:0;
+        top:0;
+        height:100%;
+        width:100%;
         padding: 25px;
-        top:10%;
-        transform:translateX(-25%);
         display:none;
         background:#efefef;
       }
-      
+
       #new-article #close {
         position: absolute;
         top:15px;
-        right:25px;
+        right:10%;
         color:rgb(0, 0, 150);
         cursor:pointer;
       }
-      
+
       #new-article-form {
         position:relative;
+        top:10%;
+        width: 75%;
+        margin:0 auto;
       }
-      
+
       #new-article-form label {
         display:block;
         margin-top:10px;
       }
-      
+
       #new-article-form textarea {
         height: 150px;
       }
-      
+
       #new-article-form input, textarea {
         width:90%;
       }
-      
+
       #confirmation {
         margin-top: 10px;
         font-weight: bold;
       }
-      
+
       .success { color: rgb(0,150,0); }
-      
+
       .hide { display: none; }
-      
-      <!-- Google addon styles, to take effect after the page's -->
     </style>
   </head>
   <body>
     <div id="wrapper">
       <div id="left">
         <form id="search-form">
-          <h2>Seearch within: </h2>
+          <h2>Search within: </h2>
           <select id="select" name="platform"></select>
-          
+
           <h2>Tags: </h2>
           <input type="text" name="tags" placeholder="Comma separated keywords"/>
-          
+
           <button type="submit" class="action" id="submit" onclick="event.preventDefault(); google.script.run.withSuccessHandler(displayResults).getResources(this.parentNode)">Search</button>
         </form>
         <button class="create" id="new-article-button" onclick="$('#new-article').show()">New Article</button>
         <div id="resultCount"></div>
         <hr />
         <h2>Links</h2>
-        <a href="https://docs.google.com/a/elkhart.k12.in.us/forms/d/e/1FAIpQLSdhFRW3e5JcD56RpIC9A0m8eWSR-nRVrv-OUDHfgACScptkEQ/viewform">Help request</a>
-        <a href="https://www.youtube.com/channel/UCgwJ38NKsSVTBW_yzw8n1eQ/featured">Instructional Technology YouTube</a>
-        <a href="https://pd.elkhart.k12.in.us">PD Signup</a>
+        <!-- Any links you want to include in the left sidebar -->
       </div>
       <div id="right">
         <h2 id="title"></h2>
@@ -144,9 +142,10 @@
       </div>
     </div>
     <div id="new-article">
-      <p>* denotes a required element</p>
-      <div id="close" onclick="$(this).parent().hide()">[close]</div>
+
       <form id="new-article-form">
+        <p style="display:inline-block">* denotes a required element</p>
+        <span id="close" onclick="$('#new-article').hide()">[close]</span>
         <label>Platform*</label>
         <select id="new-article-select" name="platform"></select>
         <label>Title*</label>
@@ -158,7 +157,7 @@
         <label>YouTube Video Link</label>
         <input type="text" name="video" />
         <input type="hidden" name="img" />
-        
+
         <button class="create" type="submit" onclick="event.preventDefault(); google.script.run.withSuccessHandler(confirm).withFailureHandler(err).addNewArticle(this.parentNode);">Submit</button>
       </form>
       <div id="confirmation"></div>
@@ -169,33 +168,37 @@
         google.script.run.withSuccessHandler(buildPlatformList).getPlatforms();
         var data = <?!= data ?>;
 
-        google.script.run.withSuccessHandler(displayResults).getResources(data);
+        // If deployed as an Apps Script web app, parameters will be passed to doGet.
+        // To prevent an error, check for an empty Object before calling the function
+        if(!jQuery.isEmptyObject(data)) {
+          google.script.run.withSuccessHandler(displayResults).getResources(data);
+        }
       })
-      
+
       function isAuth(user) {
         if(!user) {
           $("#new-article-button").hide();
         }
       }
-      
+
       function err(msg) {
         console.log(msg);
         $("#confirmation").toggleClass("error").text(msg);
-        
+
         setTimeout(function() {
           $("#confirmation").toggleClss("error").empty();
         }, 3000);
       }
-      
+
       function confirm(msg) {
         $("#confirmation").toggleClass("success").text(msg);
-        
+
         setTimeout(function() {
           $("#new-article-form")[0].reset();
           $("#confirmation").toggleClass("success").empty();
         }, 3000);
       }
-      
+
       function buildPlatformList(data) {
         var select = $("#select");
         var newSelect = $("#new-article-select");
@@ -205,29 +208,30 @@
           newSelect.append(option);
         }
       }
-        
+
       function displayResults(data) {
+
         $("#results").empty();
         $("#resultCount").empty();
         var result;
-        
+
         (data.length > 0 && data.length < 2) ? result="match" : result="matches";
-        
+
         if(data.length == 0) {
           $("#results").append("<div class='card' style='text-align:center'><h2 class='title'>Bear with us...there were no results for your search.</h2><p>Searching by platform without tags will give broader results.</p><img src='https://cdn.dribbble.com/users/37530/screenshots/2485318/no-results.png' /></div>");
         } else {
-          
+
           for(var i=0; i<data.length; i++) {
             var container = document.createElement("div");
-            
+            console.log(data[i].url);
             container.innerHTML = Card.TEMPLATE;
             $("#results").append(container);
-            
+
             var div = container.children[0];
             div.querySelector(".title").textContent = data[i].title;
             div.querySelector(".desc").innerHTML = data[i].desc;
             if(data[i].url) {
-              div.querySelector(".video").setAttribute("href", data[i].vid);
+              div.querySelector(".video").setAttribute("href", data[i].url);
               div.querySelector(".video").textContent = "YouTube video";
             }
             if(data[i].img) {
@@ -237,22 +241,20 @@
         }
         $("#resultCount").append("Found " + data.length + " " + result);
       }
-      
+
       function Card() {
         this.submitQuery = $("#submit");
       }
-      
-      Card.TEMPLATE = 
+
+      Card.TEMPLATE =
         '<div class="card">' +
           '<h2 class="title"></h2>' +
           '<div class="desc"></div>' +
           '<div class="img"><img src="" /></div>' +
           '<a class="video" href=""></a>' +
         '</div>';
-        
-      
+
+
     </script>
   </body>
 </html>
-
-
