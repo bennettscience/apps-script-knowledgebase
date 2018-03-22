@@ -13,7 +13,7 @@ There are two components if you want to use both a web app and the chat bot.
 
 ### Web app deployment
 
-1. Make a copy of the template spreadsheet. This will also copy `app.gs` and `webapp.html`.
+1. [Make a copy of the template spreadsheet](https://docs.google.com/spreadsheets/d/1wxK2nPqzux7B_TtkoCQdHrfI3_k_Vi_h-H1ihJQpCcc/edit#gid=1140872048/copy). This will also copy `app.gs` and `webapp.html`.
 2. The `db` and `platform` sheets need data. `authUsers` is not required, but anyone visiting the app will be able to add articles through the form.
 3. Open the Script Editor (Tools > Script editor)
 4. In `app.gs`, you need to set your spreadsheet key in line 23.
@@ -50,8 +50,7 @@ Once your bot is deployed, you can test it by downloading the [Hangouts Chat cli
 
 ## Links
 
-- Demo spreadsheet structure
-- See https://ohheybrian.com/blog for more information
+- [Demo spreadsheet structure](https://docs.google.com/spreadsheets/d/1wxK2nPqzux7B_TtkoCQdHrfI3_k_Vi_h-H1ihJQpCcc/edit#gid=1140872048) (use File > Make a copy to save to your Drive)
 
 ## License
 
