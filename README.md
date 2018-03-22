@@ -51,6 +51,7 @@ Once your bot is deployed, you can test it by downloading the [Hangouts Chat cli
 ## Links
 
 - [Demo spreadsheet structure](https://docs.google.com/spreadsheets/d/1wxK2nPqzux7B_TtkoCQdHrfI3_k_Vi_h-H1ihJQpCcc/edit#gid=1140872048) (use File > Make a copy to save to your Drive)
+- [More reading](https://blog.ohheybrian.com/2018/03/google-apps-script-knowledgebase-suite.html) on challenges in deploying from Apps Script alone.
 
 ## License
 
